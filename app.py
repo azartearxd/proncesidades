@@ -162,23 +162,9 @@ X = df_modelo[
 
 y = df_modelo[COL_OBJETIVO]
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y,
-    test_size=0.20,
-    random_state=42
-)
-
 modelo = CategoricalNB()
 
-modelo.fit(X_train, y_train)
-
-pred_test = modelo.predict(X_test)
-
-precision = accuracy_score(
-    y_test,
-    pred_test
-)
+modelo.fit(X, y)
 
 # ==========================================
 # TABLA DE UBICACIÓN
@@ -219,7 +205,7 @@ if opcion == "📊 Dashboard":
         .idxmax()
     )
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3 = st.columns(3)
 
     c1.metric(
         "Encuestas",
@@ -236,10 +222,7 @@ if opcion == "📊 Dashboard":
         necesidad_top
     )
 
-    c4.metric(
-        "Precisión Modelo",
-        f"{precision:.2%}"
-    )
+
 
     st.divider()
 
@@ -365,15 +348,16 @@ if opcion == "📊 Dashboard":
     )
 
     st.info(
-        f"""
-        Conclusión automática:
+    f"""
+    Conclusión automática:
 
-        La necesidad más frecuente identificada fue:
-        {necesidad_top}.
+    La necesidad más frecuente identificada fue:
+    {necesidad_top}.
 
-        El modelo predictivo obtuvo una precisión
-        aproximada de {precision:.2%}.
-        """
+    Los resultados sugieren que esta necesidad
+    debería considerarse prioritaria para futuras
+    inversiones en infraestructura urbana.
+    """
     )
 
 # ==========================================
