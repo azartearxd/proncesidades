@@ -2,28 +2,117 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
 
 from sklearn.preprocessing import LabelEncoder
 from sklearn.naive_bayes import CategoricalNB
 from sklearn.model_selection import train_test_split
 
 # ==========================================
-# CONFIGURACIÓN
+# CONFIGURACIÓN DE ESTILOS
 # ==========================================
 
+# Configurar tema oscuro en Streamlit
 st.set_page_config(
     page_title="Sistema de Recomendación Urbana",
     page_icon="🏙️",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-PALETA = [
-    "#FF69B4",
-    "#FFB6C1",
-    "#87CEEB",
-    "#B0E0E6",
-    "#6A5ACD"
-]
+# CSS personalizado para fondo negro y colores dorado/rojo
+st.markdown("""
+    <style>
+    /* Fondo principal negro */
+    .stApp {
+        background-color: #000000;
+    }
+    
+    /* Fondo del sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #1a1a1a;
+    }
+    
+    /* Texto en general */
+    .stMarkdown, .stTitle, .stHeader, .stSubheader, .stText, label, .stMetric {
+        color: #FFD700 !important;
+    }
+    
+    /* Títulos principales */
+    h1, h2, h3 {
+        color: #FFD700 !important;
+        border-bottom: 2px solid #8B0000;
+    }
+    
+    /* Métricas */
+    [data-testid="stMetricValue"] {
+        color: #FFD700 !important;
+        font-size: 2rem !important;
+    }
+    
+    [data-testid="stMetricLabel"] {
+        color: #FF6347 !important;
+    }
+    
+    /* Botones */
+    .stButton > button {
+        background-color: #8B0000 !important;
+        color: #FFD700 !important;
+        border: 2px solid #FFD700 !important;
+        font-weight: bold !important;
+    }
+    
+    .stButton > button:hover {
+        background-color: #FFD700 !important;
+        color: #8B0000 !important;
+        border: 2px solid #8B0000 !important;
+    }
+    
+    /* Selectboxes y inputs */
+    .stSelectbox > div > div, .stSelectbox input {
+        background-color: #1a1a1a !important;
+        color: #FFD700 !important;
+        border-color: #8B0000 !important;
+    }
+    
+    /* Dataframe */
+    .stDataFrame {
+        background-color: #1a1a1a !important;
+        color: #FFD700 !important;
+    }
+    
+    /* Success/Info messages */
+    .stSuccess {
+        background-color: #1a1a1a !important;
+        color: #FFD700 !important;
+        border-left-color: #8B0000 !important;
+    }
+    
+    .stInfo {
+        background-color: #1a1a1a !important;
+        color: #FFD700 !important;
+        border-left-color: #FFD700 !important;
+    }
+    
+    /* Sidebar text */
+    [data-testid="stSidebar"] .stMarkdown, 
+    [data-testid="stSidebar"] .stTitle {
+        color: #FFD700 !important;
+    }
+    
+    /* Radio buttons */
+    .stRadio > div > label > div {
+        color: #FFD700 !important;
+    }
+    
+    /* Divider */
+    hr {
+        border-color: #8B0000 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+PALETA = ["#FFD700", "#FF6347", "#8B0000", "#DAA520", "#B8860B"]
 
 # ==========================================
 # CARGAR DATOS
@@ -116,6 +205,31 @@ opcion = st.sidebar.radio(
 )
 
 # ==========================================
+# FUNCIÓN PARA GRÁFICOS CON ESTILO OSCURO
+# ==========================================
+
+def aplicar_estilo_oscuro(fig):
+    fig.update_layout(
+        plot_bgcolor='#000000',
+        paper_bgcolor='#000000',
+        font_color='#FFD700',
+        title_font_color='#FFD700',
+        title_font_size=18,
+        legend_font_color='#FFD700',
+        xaxis=dict(
+            title_font_color='#FFD700',
+            tickfont_color='#FFD700',
+            gridcolor='#8B0000'
+        ),
+        yaxis=dict(
+            title_font_color='#FFD700',
+            tickfont_color='#FFD700',
+            gridcolor='#8B0000'
+        )
+    )
+    return fig
+
+# ==========================================
 # DASHBOARD
 # ==========================================
 
@@ -131,25 +245,27 @@ if opcion == "📊 Dashboard":
 
     c1, c2, c3 = st.columns(3)
 
-    c1.metric(
-        "Encuestas",
-        len(df_original)
-    )
+    with c1:
+        st.metric(
+            "📊 Encuestas",
+            len(df_original)
+        )
 
-    c2.metric(
-        "Colonias",
-        df_original[COL_COLONIA].nunique()
-    )
+    with c2:
+        st.metric(
+            "🏘️ Colonias",
+            df_original[COL_COLONIA].nunique()
+        )
 
-    c3.metric(
-        "Necesidad Principal",
-        necesidad_top
-    )
+    with c3:
+        st.metric(
+            "⭐ Necesidad Principal",
+            necesidad_top
+        )
 
     st.divider()
 
-    colA, colB = st.columns(2)
-
+    # GRÁFICO 1: Necesidades más solicitadas - GRÁFICO DE BARRAS HORIZONTAL
     necesidades = (
         df_original[COL_OBJETIVO]
         .value_counts()
@@ -160,36 +276,54 @@ if opcion == "📊 Dashboard":
         "Necesidad",
         "Cantidad"
     ]
+    
+    # Limitar a top 15 para mejor visualización
+    necesidades_top = necesidades.head(15)
 
     fig1 = px.bar(
-        necesidades,
-        x="Necesidad",
-        y="Cantidad",
-        color="Necesidad",
-        color_discrete_sequence=PALETA,
-        title="Necesidades más solicitadas"
+        necesidades_top,
+        y="Necesidad",
+        x="Cantidad",
+        orientation="h",
+        color="Cantidad",
+        color_continuous_scale=["#8B0000", "#FFD700"],
+        title="Top 15 Necesidades más solicitadas",
+        text="Cantidad"
     )
-
-    colA.plotly_chart(
-        fig1,
-        use_container_width=True
+    
+    fig1.update_traces(
+        textposition="outside",
+        textfont=dict(color="#FFD700", size=12)
     )
-
-    fig2 = px.pie(
-        necesidades,
-        names="Necesidad",
-        values="Cantidad",
-        title="Distribución de necesidades",
-        color_discrete_sequence=PALETA
-    )
-
-    colB.plotly_chart(
-        fig2,
-        use_container_width=True
-    )
+    
+    fig1 = aplicar_estilo_oscuro(fig1)
+    
+    st.plotly_chart(fig1, use_container_width=True)
 
     st.divider()
 
+    # GRÁFICO 2: Distribución de necesidades - TREEMAP (mejor para muchas categorías)
+    fig2 = px.treemap(
+        necesidades,
+        path=["Necesidad"],
+        values="Cantidad",
+        title="Distribución de necesidades (Treemap)",
+        color="Cantidad",
+        color_continuous_scale=["#8B0000", "#FFD700", "#FF6347"]
+    )
+    
+    fig2.update_traces(
+        textfont=dict(color="#FFFFFF", size=14),
+        textinfo="label+value+percent entry"
+    )
+    
+    fig2 = aplicar_estilo_oscuro(fig2)
+    
+    st.plotly_chart(fig2, use_container_width=True)
+
+    st.divider()
+
+    # GRÁFICO 3 y 4: Ingresos y Satisfacción
     colC, colD = st.columns(2)
 
     ingresos = (
@@ -207,15 +341,14 @@ if opcion == "📊 Dashboard":
         ingresos,
         x="Ingreso",
         y="Cantidad",
-        color="Ingreso",
-        color_discrete_sequence=PALETA,
+        color="Cantidad",
+        color_continuous_scale=["#8B0000", "#FFD700"],
         title="Distribución de ingresos"
     )
+    
+    fig3 = aplicar_estilo_oscuro(fig3)
 
-    colC.plotly_chart(
-        fig3,
-        use_container_width=True
-    )
+    colC.plotly_chart(fig3, use_container_width=True)
 
     satisfaccion = (
         df_original[COL_SATISFACCION]
@@ -228,21 +361,22 @@ if opcion == "📊 Dashboard":
         "Cantidad"
     ]
 
-    fig4 = px.pie(
+    fig4 = px.bar(
         satisfaccion,
-        names="Respuesta",
-        values="Cantidad",
-        title="Satisfacción residencial",
-        color_discrete_sequence=PALETA
+        x="Respuesta",
+        y="Cantidad",
+        color="Respuesta",
+        color_discrete_sequence=PALETA,
+        title="Satisfacción residencial"
     )
+    
+    fig4 = aplicar_estilo_oscuro(fig4)
 
-    colD.plotly_chart(
-        fig4,
-        use_container_width=True
-    )
+    colD.plotly_chart(fig4, use_container_width=True)
 
     st.divider()
 
+    # GRÁFICO 5: Top colonias
     top_colonias = (
         df_original[COL_COLONIA]
         .value_counts()
@@ -257,29 +391,32 @@ if opcion == "📊 Dashboard":
 
     fig5 = px.bar(
         top_colonias,
-        x="Colonia",
-        y="Encuestas",
+        y="Colonia",
+        x="Encuestas",
+        orientation="h",
         color="Encuestas",
-        color_continuous_scale="Blues",
-        title="Top 10 colonias con más registros"
+        color_continuous_scale=["#8B0000", "#FFD700"],
+        title="Top 10 colonias con más registros",
+        text="Encuestas"
     )
+    
+    fig5.update_traces(textposition="outside")
+    fig5 = aplicar_estilo_oscuro(fig5)
 
-    st.plotly_chart(
-        fig5,
-        use_container_width=True
-    )
+    st.plotly_chart(fig5, use_container_width=True)
 
     st.info(
         f"""
-        Conclusión automática:
+        🎯 **Conclusión automática:**
 
-        La necesidad más frecuente identificada fue:
-        {necesidad_top}.
+        La necesidad más frecuente identificada fue: **{necesidad_top}**.
+
+        Se recomienda priorizar este servicio en las colonias con mayor demanda.
         """
     )
 
 # ==========================================
-# PREDICCIÓN
+# PREDICCIÓN (con estilos actualizados)
 # ==========================================
 
 elif opcion == "🤖 Predicción Inteligente":
@@ -303,7 +440,7 @@ elif opcion == "🤖 Predicción Inteligente":
         )
     )
 
-    if st.button("Predecir"):
+    if st.button("✨ Predecir ✨"):
 
         datos = pd.DataFrame({
             COL_COLONIA:[
@@ -335,11 +472,11 @@ elif opcion == "🤖 Predicción Inteligente":
         )
 
         st.success(
-            f"Recomendación principal: {resultados.iloc[0]['Necesidad']}"
+            f"🏆 Recomendación principal: **{resultados.iloc[0]['Necesidad']}**"
         )
 
         st.subheader(
-            "Top 3 recomendaciones"
+            "📊 Top 3 recomendaciones"
         )
 
         st.dataframe(
@@ -353,8 +490,10 @@ elif opcion == "🤖 Predicción Inteligente":
             y="Probabilidad",
             color="Necesidad",
             color_discrete_sequence=PALETA,
-            title="Probabilidades"
+            title="Probabilidades por necesidad"
         )
+        
+        fig = aplicar_estilo_oscuro(fig)
 
         st.plotly_chart(
             fig,
@@ -362,7 +501,7 @@ elif opcion == "🤖 Predicción Inteligente":
         )
 
         st.subheader(
-            f"Historial de necesidades en {colonia}"
+            f"📈 Historial de necesidades en {colonia}"
         )
 
         filtro = df_original[
@@ -388,6 +527,8 @@ elif opcion == "🤖 Predicción Inteligente":
             color="Necesidad",
             color_discrete_sequence=PALETA
         )
+        
+        fig2 = aplicar_estilo_oscuro(fig2)
 
         st.plotly_chart(
             fig2,
@@ -395,7 +536,7 @@ elif opcion == "🤖 Predicción Inteligente":
         )
 
 # ==========================================
-# UBICACIÓN
+# UBICACIÓN (con estilos actualizados)
 # ==========================================
 
 elif opcion == "🏗️ Recomendación de Ubicación":
@@ -423,11 +564,11 @@ elif opcion == "🏗️ Recomendación de Ubicación":
     mejor = datos.iloc[0]["Colonia"]
 
     st.success(
-        f"Mejor colonia recomendada: {mejor}"
+        f"📍 Mejor colonia recomendada: **{mejor}**"
     )
 
     st.subheader(
-        "Top 10 colonias"
+        "🏆 Top 10 colonias con mayor demanda"
     )
 
     st.dataframe(
@@ -441,9 +582,12 @@ elif opcion == "🏗️ Recomendación de Ubicación":
         y="Colonia",
         orientation="h",
         color="Solicitudes",
-        color_continuous_scale="Blues",
-        title=f"Demanda de {establecimiento}"
+        color_continuous_scale=["#8B0000", "#FFD700"],
+        title=f"Demanda de {establecimiento} por colonia"
     )
+    
+    fig.update_traces(textposition="outside")
+    fig = aplicar_estilo_oscuro(fig)
 
     st.plotly_chart(
         fig,
@@ -468,7 +612,7 @@ elif opcion == "📋 Datos":
     ).encode("utf-8")
 
     st.download_button(
-        "Descargar CSV",
+        "📥 Descargar CSV",
         csv,
         "encuesta.csv",
         "text/csv"
