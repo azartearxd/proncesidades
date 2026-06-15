@@ -132,14 +132,12 @@ COL_COLONIA = "Colonia"
 
 COL_INGRESO = "¿Ingreso Mensual en Casa?"
 
-COL_SERVICIOS = "¿Crees que dispones con las necesidades necesarias (escuelas, farmacias, consultorios, tiendas de bienes, transporte, etc) cerca de ti?"
-
 COL_OBJETIVO = "¿Qué crees que sería una buena adición a tu colonia?"
 
 COL_SATISFACCION = "¿Estás satisfecho con tu lugar de residencia ?"
 
 # ==========================================
-# PREPARAR MODELO
+# PREPARAR MODELO (SOLO CON COLONIA)
 # ==========================================
 
 encoders = {}
@@ -147,7 +145,6 @@ encoders = {}
 df_modelo = df_original[
     [
         COL_COLONIA,
-        COL_SERVICIOS,
         COL_OBJETIVO
     ]
 ].copy()
@@ -159,13 +156,7 @@ for col in df_modelo.columns:
     )
     encoders[col] = le
 
-X = df_modelo[
-    [
-        COL_COLONIA,
-        COL_SERVICIOS
-    ]
-]
-
+X = df_modelo[[COL_COLONIA]]
 y = df_modelo[COL_OBJETIVO]
 
 X_train, X_test, y_train, y_test = train_test_split(
@@ -302,7 +293,7 @@ if opcion == "📊 Dashboard":
 
     st.divider()
 
-    # GRÁFICO 2: Distribución de necesidades - TREEMAP (mejor para muchas categorías)
+    # GRÁFICO 2: Distribución de necesidades - TREEMAP
     fig2 = px.treemap(
         necesidades,
         path=["Necesidad"],
@@ -416,7 +407,7 @@ if opcion == "📊 Dashboard":
     )
 
 # ==========================================
-# PREDICCIÓN (con estilos actualizados)
+# PREDICCIÓN (SOLO CON COLONIA)
 # ==========================================
 
 elif opcion == "🤖 Predicción Inteligente":
@@ -431,25 +422,12 @@ elif opcion == "🤖 Predicción Inteligente":
         )
     )
 
-    servicios = st.selectbox(
-        "¿Cuenta con servicios cercanos?",
-        sorted(
-            df_original[COL_SERVICIOS]
-            .dropna()
-            .unique()
-        )
-    )
-
     if st.button("✨ Predecir ✨"):
 
         datos = pd.DataFrame({
             COL_COLONIA:[
                 encoders[COL_COLONIA]
                 .transform([colonia])[0]
-            ],
-            COL_SERVICIOS:[
-                encoders[COL_SERVICIOS]
-                .transform([servicios])[0]
             ]
         })
 
@@ -536,7 +514,7 @@ elif opcion == "🤖 Predicción Inteligente":
         )
 
 # ==========================================
-# UBICACIÓN (con estilos actualizados)
+# UBICACIÓN
 # ==========================================
 
 elif opcion == "🏗️ Recomendación de Ubicación":
